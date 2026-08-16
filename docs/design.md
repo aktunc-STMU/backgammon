@@ -1,13 +1,14 @@
 # Design Documentation
-Traces UX/design decisions back to `docs/requirements.md`. This document is updated
-as design work progresses through each component (board, checkers, dice, panels, etc.).
+
+Traces UX/design decisions back to `docs/requirements.md`. Updated as design work
+progresses through each component (board, checkers, dice, panels, etc.).
 
 ## Status
 
 | Component | Status | Notes |
 |---|---|---|
-| Board layout | In progress | This document |
-| Checkers | Not started | |
+| Board layout | Done | `design/components/board.html` (Claude Design) |
+| Checkers | Not started | Depends on anchor coordinate system — see `architecture-notes.md` |
 | Dice | Not started | |
 | Turn / score panel | Not started | |
 
@@ -18,59 +19,59 @@ as design work progresses through each component (board, checkers, dice, panels,
 ### 1.1 Overview
 
 Standard backgammon board: 24 triangular points arranged in 4 quadrants of 6,
-split by a central bar, with bear-off/home areas on the right side.
+split by a central bar (60px), with an optional bear-off tray on the right.
 
-```
- 13 14 15 16 17 18 |BAR| 19 20 21 22 23 24
-+-------------------+   +-------------------+  |
-|  ↓  ↓  ↓  ↓  ↓  ↓ |   |  ↓  ↓  ↓  ↓  ↓  ↓ |  |  <- Home
-|                   |   |                   |  |     (Player 2 bears off here,
-|                   |   |                   |  |      or Player 1, depending on
-|  ↑  ↑  ↑  ↑  ↑  ↑ |   |  ↑  ↑  ↑  ↑  ↑  ↑ |  |      orientation below)
-+-------------------+   +-------------------+  |
- 12 11 10  9  8  7  |BAR|  6  5  4  3  2  1
-```
+Reference component: `design/components/board.html`, built in Claude Design.
+Runtime dependency (`support.js`) is a generic Claude Design preview templating
+runtime — not backgammon-specific, not part of the app itself.
 
-### 1.2 Open questions / decisions to finalize
+### 1.2 Decisions
 
-- [ ] **Orientation**: Which player's home board is on the right vs left? Does
-      orientation flip depending on which player is viewing (if two-device/remote
-      play is ever in scope), or is it fixed for a single shared-screen game?
-- [ ] **Point numbering**: Show point numbers (1–24) on the board at all, or keep
-      them purely internal to the data model? If shown, where (above/below each
-      triangle)?
-- [ ] **Point direction**: Top row of points points downward, bottom row points
-      upward — confirm this is the convention we're using.
-- [ ] **Bear-off tray**: Separate visual area outside the 24 points, or implied
-      by the edge of the board?
+- **Orientation / perspective**: Fixed single-screen layout. The `perspective`
+  prop relabels point numbers only (`25 - baseNumber`); it does **not** rotate
+  or reposition the triangles. Confirmed sufficient for this project's scope
+  (no physical 180° board rotation for the other player's view).
+- **Point numbering convention**: Standard convention, encoded in geometry
+  but not previously written down as a contract. Now explicit:
+  - Bottom-right quadrant: points 1–6 (edge → bar)
+  - Bottom-left quadrant: points 7–12 (bar → edge)
+  - Top-left quadrant: points 13–18 (edge → bar)
+  - Top-right quadrant: points 19–24 (bar → edge)
+- **Bear-off tray**: Toggleable via `showBearOffTray` prop. Currently, hiding
+  the tray leaves the ~158px tray column as dead frame-colored space rather
+  than recomputing board geometry. **Open — see architecture-notes.md.**
+- **Point numbers**: shown directly on the board (not purely in the data model),
+  with text color chosen per-point for contrast against that point's fill.
 
-### 1.3 Structure
+### 1.3 Color tokens (finalized)
 
-- **24 points**: alternating two colors (e.g., light/dark or two accent colors),
-  drawn as triangles.
-- **4 quadrants** of 6 points each, split into two halves (left/right of the bar).
-- **Bar**: central vertical strip, holds checkers that have been hit.
-- **Frame/border**: outer edge of the board, distinct from the point colors.
-
-### 1.4 Visual approach
-
-- Build as a single self-contained HTML file with inline SVG for the points
-  (triangles are easiest to draw precisely in SVG vs. CSS clip-paths).
-- No interactivity or checkers in this first pass — layout and color only.
-- Use CSS variables for colors/spacing so the board can restyle consistently
-  once synced into the claude.ai/design component library via DesignSync.
-
-### 1.5 Color palette
-
-_TBD — fill in once first visual draft is reviewed._
-
-| Element | Color | Notes |
+| Token | Value | Role |
 |---|---|---|
-| Point (light) | | |
-| Point (dark) | | |
-| Board frame | | |
-| Bar | | |
-| Background | | |
+| `--frame` | #5C3A21 | Outer board frame |
+| `--frame-edge` | _(see component)_ | Frame border detail |
+| `--point-a` | #E9D8B4 | Point color, light |
+| `--point-b` | #8B3A2A | Point color, dark |
+| `--bar` | #2A1810 | Central bar |
+| `--tray-bg` | _(see component)_ | Bear-off tray background |
+| `--number-light` | _(see component)_ | Point number text on dark points |
+| `--number-dark` | _(see component)_ | Point number text on light points |
+
+These are the canonical design tokens going forward — reused as-is for
+checkers, dice, and panel components rather than redefined per-component.
+
+### 1.4 Geometry (as built)
+
+- Board split into left/right halves, 429px each, meeting a 60px central bar
+  exactly (no gap/overlap).
+- Color alternates `i % 2` both across the bar and column-wise between top/bottom
+  quadrants.
+- ViewBox: 1100×700 (fixed regardless of tray visibility — see open question above).
+
+### 1.5 Known gaps (not part of this component, tracked in architecture-notes.md)
+
+- No checker anchor coordinate system defined yet
+- No exposed `pointAnchors[1..24]` data contract
+- Bear-off tray hidden state leaves unresolved dead space
 
 ---
 
@@ -79,7 +80,7 @@ _TBD — fill in once first visual draft is reviewed._
 | Design decision | Related requirement |
 |---|---|
 | 24-point board, standard layout | Functional: "supports standard rules" |
-| _(add as decisions are made)_ | |
+| Fixed orientation, numbering relabel only | Functional: 2-player, single shared screen |
 
 ---
 
@@ -87,4 +88,5 @@ _TBD — fill in once first visual draft is reviewed._
 
 | Date | Change |
 |---|---|
-| 2026-08-16 | Initial skeleton created; board layout section drafted |
+| _(earlier)_ | Initial skeleton created; board layout section drafted |
+| _(today)_ | Board layout finalized in Claude Design; palette, numbering, and orientation decisions recorded; open items moved to `architecture-notes.md` |
