@@ -48,13 +48,13 @@ runtime — not backgammon-specific, not part of the app itself.
 | Token | Value | Role |
 |---|---|---|
 | `--frame` | #5C3A21 | Outer board frame |
-| `--frame-edge` | _(see component)_ | Frame border detail |
+| `--frame-edge` | #3E2716 | Frame border detail |
 | `--point-a` | #E9D8B4 | Point color, light |
 | `--point-b` | #8B3A2A | Point color, dark |
 | `--bar` | #2A1810 | Central bar |
-| `--tray-bg` | _(see component)_ | Bear-off tray background |
-| `--number-light` | _(see component)_ | Point number text on dark points |
-| `--number-dark` | _(see component)_ | Point number text on light points |
+| `--tray-bg` | #452B18 | Bear-off tray background |
+| `--number-light` | #E9D8B4 | Point number text on dark points |
+| `--number-dark` | #2A1810 | Point number text on light points |
 
 These are the canonical design tokens going forward — reused as-is for
 checkers, dice, and panel components rather than redefined per-component.
